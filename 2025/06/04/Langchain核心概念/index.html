@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>我的技术与生活——Langchain核心概念 | 祥仔的个人基地</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="/imgs/shortcut-icon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/css/public.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/iconfont.css" />
+  <link rel="stylesheet" href="/css/APlayer.min.css" />
+  <script src="/js/APlayer.min.js"></script>
+  <script src="/js/jquery.min.js"></script>
+  <script src="/js/jquery.pjax.min.js"></script>
+
+  <script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+  <script>
+    document.title = `我的技术与生活——Langchain核心概念`
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<style>
+  .load {
+    width: 100%;
+    height: 100vh;
+    background-color: rgb(37, 35, 40);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 9999;
+  }
+  .load-circle {
+    width: 80px;
+    height: 80px;
+    border: 8px solid orange;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: rotate 1s linear infinite;
+    filter: drop-shadow(0 0 3px orange);
+  }
+  .load-circle-inner {
+    width: 40px;
+    height: 40px;
+    border: 8px solid orange;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: rotate-reverse .5s linear infinite;
+  }
+  .load-text {
+    margin-top: 20px;
+    font-size: 24px;
+    color: orange;
+    display: flex;
+  }
+  .load-text span {
+    margin: 0 5px;
+    text-shadow: 5px 5px 5px orange;
+    animation: move 1s linear infinite;
+  }
+  .load-text span:nth-child(1) {
+    animation-delay: -0.6s;
+  }
+  .load-text span:nth-child(2) {
+    animation-delay: -0.5s;
+  }
+  .load-text span:nth-child(3) {
+    animation-delay: -0.4s;
+  }
+  .load-text span:nth-child(4) {
+    animation-delay: -0.3s;
+  }
+  .load-text span:nth-child(5) {
+    animation-delay: -0.2s;
+  }
+  .load-text span:nth-child(6) {
+    animation-delay: -0.1s;
+  }
+  @keyframes rotate {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes rotate-reverse {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(-360deg); }
+  }
+  @keyframes move {
+    0% { transform: translateY(0%) rotate(0) scale(1); }
+    20% { transform: translateY(20%) rotate(10deg) scale(1.2); }
+    80% { transform: translateY(-10%) rotate(-20deg) scale(.8);}
+    100% { transform: translateY(0) rotate(0) scale(1); }
+  }
+
+  .progress {
+    position: fixed;
+    left: 0; top: 0;
+    width: 0;
+    height: 3px;
+    background-color: green;
+    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) .1s;
+    z-index: 9999;
+  }
+
+  .to-up {
+    animation: toUp .5s 1;
+  }
+  .gray {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 9999;
+    display: none;
+    pointer-events: none;
+    background-color: #000;
+    mix-blend-mode: color;
+  }
+  @keyframes toUp {
+    from { transform: translateY(15px); opacity: 0; }
+    to { transform: translateY(0) ; opacity: 1; }
+  }
+</style>
+<body>
+  <div id="load" class="load">
+    <div class="load-circle">
+      <div class="load-circle-inner"></div>
+    </div>
+    <p class="load-text">
+      <span>L</span>
+      <span>O</span>
+      <span>A</span>
+      <span>D</span>
+      <span>I</span>
+      <span>N</span>
+      <span>G</span>
+    </p>
+  </div>
+  <div id="container" class="container w-100 vh-100" style="display: none;">
+    <header class="header">
+  <div class="header-wrapper">
+    <div class="header-left">
+      <div class="header-search">
+        <input id="search-input" type="text" class="header-search--input" placeholder="请输入要检索的文章标题" />
+        <span id="search-btn" class="header-search--icon"><i class="iconfont icon-sousuo"></i></span>
+      </div>
+      <div id="search-layer" class="header-search--layer hidden">
+        <p class="title">
+          <span>以下是搜索内容：</span>
+          <span id="close-layer-btn">关闭</span>
+        </p>
+        <ul>
+        </ul>
+      </div>
+    </div>
+    <div class="header-right">
+      <ul class="header-menu">
+        <li>
+          <a href="https://woshilmx.github.io/">
+            <i class="header-menu--icon iconfont icon-shouye"></i>
+            <span class="header-menu--span">首页</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://woshilmx.github.io/log">
+            <i class="header-menu--icon iconfont icon-rizhi"></i>
+            <span class="header-menu--span">日志</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://woshilmx.github.io/link">
+            <i class="header-menu--icon iconfont icon-youqinglianjie"></i>
+            <span class="header-menu--span">友情链接</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://woshilmx.github.io/about">
+            <i class="header-menu--icon iconfont icon-guanyuwomen"></i>
+            <span class="header-menu--span">关于我</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<script>
+  const ipt = document.querySelector('#search-input')
+  const btn = document.querySelector('#search-btn')
+  const layer = document.querySelector('#search-layer')
+  const posts = JSON.parse(`[{"title":"Langchain核心概念","path":"2025/06/04/Langchain核心概念/"},{"title":"并发编程","path":"2025/05/30/并发编程/"}]`)
+  ipt.addEventListener('keyup', e => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  })
+  btn.addEventListener('click', () => {
+    handleSearch()
+  })
+
+  document.querySelector('#close-layer-btn').addEventListener('click', () => {
+    layer.classList.toggle('hidden')
+  })
+
+  function handleSearch() {
+    if (ipt.value.trim() === '') {
+      return
+    }
+    let html = ''
+    const targetPosts = posts.filter(post => post.title.includes(ipt.value))
+    targetPosts.forEach(post => {
+      html += `
+        <li>
+          <div>
+            <a href="/${post.path}">${post.title.replace(new RegExp(ipt.value), `<span>${ipt.value}</span>`)}</a>
+          </div>
+          <img src="${post.cover || '/imgs/default-cover.webp' }" />
+        </li>
+      `
+    })
+    if (html.trim () === '') {
+      html += '<p class="empty">没有搜索到内容</p>'
+    }
+    layer.querySelector('ul').innerHTML = html
+    layer.classList.remove('hidden')
+  }
+</script> 
+    <section id="main" class="main">
+      <div class="main-left-wrapper">
+<div class="main-left">
+  <div class="main-left--block">
+    <div class="main-left--info">
+      <img src="/imgs/avatar.jpg"" class="main-left--avatar" />
+      <div class="main-left--intro">
+        <p class="main-left--name">Cola.</p>
+        <div class="main-left--tags">
+          <span class="main-left--tag">中二</span>
+          <span class="main-left--tag">宅</span>
+        </div>
+      </div>
+    </div>
+  
+    <div>
+      <div class="main-left--motto">
+        <p>“花有重开日，人无再少年”</p>
+        <p>“一个简单普通的男孩”</p>
+      </div>
+      <div class="main-left--github">
+        <span class="line"></span>
+        <a target="_blank" rel="noopener" href="https://github.com/Aizener"><i class="logo iconfont icon-github-fill"></i></a>
+        <span class="line"></span>
+      </div>
+      <div class="main-left--statics">
+        <a href="/categories">
+          <div>
+            <span>5</span>
+            <span>分类</span>
+          </div>
+        </a>
+        <a href="/tags">
+          <div>
+            <span>3</span>
+            <span>标签</span>
+          </div>
+        </a>
+        <a href="/archives">
+          <div>
+            <span>2 </span>
+            <span>归档</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-left--block">
+    <ul class="main-left--menu">
+      
+        <li>
+          <a href="/">
+            <span class="header-menu--span">小站首页</span>
+            <i class="header-menu--icon iconfont icon-shouye"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/log">
+            <span class="header-menu--span">个人日志</span>
+            <i class="header-menu--icon iconfont icon-rizhi"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/link">
+            <span class="header-menu--span">友情链接</span>
+            <i class="header-menu--icon iconfont icon-youqinglianjie"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/about">
+            <span class="header-menu--span">关于自己</span>
+            <i class="header-menu--icon iconfont icon-guanyuwomen"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/tools">
+            <span class="header-menu--span">我的工具</span>
+            <i class="header-menu--icon iconfont icon-gongju"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+  <div class="main-left--block">
+    <div class="main-left--site">
+      <h5 class="main-left--title">
+        <span>站点信息</span>
+        <i class="iconfont icon-zhandian"></i>
+      </h5>
+      <p class="main-left--subtitle">
+        <span>文章数目：</span>
+        <span>2 篇</span>
+      </p>
+      <p class="main-left--subtitle">
+        <span>最近动态：</span>
+        <span>今天</span>
+      </p>
+      <p class="main-left--subtitle">
+        <span>上线时间：</span>
+        <span>1204天</span>
+      </p>
+      <p class="main-left--subtitle">
+        <span>当前版本：</span>
+        <span>v1.0.2</span>
+      </p>
+    </div>
+  </div>
+</div></div>
+      <div id="main-container" class="main-container">
+
+
+  <link rel="stylesheet" href="/css/partial/article.css" />
+
+<div class="article-container">
+  <div class="article">
+    <h1 class="article-title">Langchain核心概念</h1>
+    <div class="article-info">
+      <div class="article-info--item">
+        <div class="article-info--info">
+          
+          <div class="article-info--categories">
+            <span>分类：</span>
+            <a class="category-link" href="/categories/LLM/">LLM</a>, <a class="category-link" href="/categories/LLM/langchain/">Langchain</a>
+          </div>
+          
+          
+          <div class="article-info--tags">
+            <span>标签：</span>
+            <a class="tag-link" href="/tags/LCEL/" rel="tag">LCEL</a><a class="tag-link" href="/tags/Runnable/" rel="tag">Runnable</a><a class="tag-link" href="/tags/langchain/" rel="tag">langchain</a>
+          </div>
+          
+          <p class="article-info--date">日期：2025-06-04 01:15:28</p>
+        </div>
+        <img src="/imgs/default-cover.webp" alt="" class="article-cover">
+      </div>
+    </div>
+    <article class="article-content markdown-body">
+      <h1 id="LangChain-核心概念"><a href="#LangChain-核心概念" class="headerlink" title="LangChain 核心概念"></a>LangChain 核心概念</h1><h2 id="1-什么是-LangChain？"><a href="#1-什么是-LangChain？" class="headerlink" title="1. 什么是 LangChain？"></a>1. 什么是 LangChain？</h2><p>LangChain 是一个专为构建大语言模型 (LLM) 驱动应用的开发框架，目标是使得 LLM 更易集成、组合和部署到真实产品中。</p>
+<hr>
+<h2 id="2-LCEL（LangChain-Expression-Language）"><a href="#2-LCEL（LangChain-Expression-Language）" class="headerlink" title="2. LCEL（LangChain Expression Language）"></a>2. LCEL（LangChain Expression Language）</h2><p>LCEL 是 LangChain 的链式表达式语言，是函数式、可组合、类型安全的方式，用于构建 LLM 流水线。</p>
+<h3 id="特点："><a href="#特点：" class="headerlink" title="特点："></a>特点：</h3><ul>
+<li>声明式链构建</li>
+<li>支持并行执行、管道处理</li>
+<li>每一步都是 <code>Runnable</code>，可以组合成复杂的链</li>
+<li>支持调试追踪（Tracing）</li>
+</ul>
+<h3 id="常用组成方式："><a href="#常用组成方式：" class="headerlink" title="常用组成方式："></a>常用组成方式：</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.runnables <span class="keyword">import</span> RunnableLambda, RunnableParallel, RunnablePassthrough</span><br><span class="line"></span><br><span class="line">chain = RunnableLambda(<span class="keyword">lambda</span> x: x + <span class="number">1</span>) | RunnableLambda(<span class="keyword">lambda</span> x: x * <span class="number">2</span>)</span><br><span class="line">result = chain.invoke(<span class="number">3</span>)  <span class="comment"># 输出 8</span></span><br></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="3-什么是链（Chain）？"><a href="#3-什么是链（Chain）？" class="headerlink" title="3. 什么是链（Chain）？"></a>3. 什么是链（Chain）？</h2><p>链 是多个步骤按顺序组合执行的对象，常用于以下处理流程：</p>
+<ul>
+<li>Prompt 构建</li>
+<li>模型调用</li>
+<li>结果解析</li>
+<li>多模态输出&#x2F;输入</li>
+</ul>
+<p>链支持串行、并行组合，也支持嵌套链。</p>
+<hr>
+<h2 id="4-Runnable-体系总览"><a href="#4-Runnable-体系总览" class="headerlink" title="4. Runnable 体系总览"></a>4. Runnable 体系总览</h2><p><code>Runnable</code> 是 LangChain 中一切“可运行组件”的基类，是 LCEL 的核心构建块。</p>
+<h3 id="常见类型及用途："><a href="#常见类型及用途：" class="headerlink" title="常见类型及用途："></a>常见类型及用途：</h3><table>
+<thead>
+<tr>
+<th>类别</th>
+<th>类名</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>通用</td>
+<td><code>RunnableLambda</code></td>
+<td>将任意 Python 函数包装为链组件</td>
+</tr>
+<tr>
+<td>透传</td>
+<td><code>RunnablePassthrough</code></td>
+<td>原样返回输入，常用于调试或结构保持</td>
+</tr>
+<tr>
+<td>并行</td>
+<td><code>RunnableParallel</code></td>
+<td>并行运行多个 Runnable，返回 dict 聚合结果</td>
+</tr>
+<tr>
+<td>串行</td>
+<td>&#96;</td>
+<td>&#96; 运算符</td>
+</tr>
+<tr>
+<td>组合链</td>
+<td><code>RunnableMap</code></td>
+<td>对输入集合每项运行同一 Runnable，类似 <code>map()</code></td>
+</tr>
+<tr>
+<td>输入分发</td>
+<td><code>RunnableBranch</code></td>
+<td>条件执行不同链</td>
+</tr>
+<tr>
+<td>模型接口</td>
+<td><code>ChatOpenAI</code>, <code>ChatAnthropic</code>, etc.</td>
+<td>封装不同厂商的大模型接口</td>
+</tr>
+<tr>
+<td>解析器</td>
+<td><code>StructuredOutputParser</code></td>
+<td>用于结构化输出解析</td>
+</tr>
+<tr>
+<td>Prompt</td>
+<td><code>ChatPromptTemplate</code> 等</td>
+<td>构建多轮对话 Prompt 模板</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="5-串行链构建"><a href="#5-串行链构建" class="headerlink" title="5. 串行链构建"></a>5. 串行链构建</h2><p>使用 <code>|</code> 管道操作符组合步骤：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">chain = prompt | llm | output_parser</span><br></pre></td></tr></table></figure>
+
+<p>每一步都是 <code>Runnable</code>，例如：</p>
+<ul>
+<li><code>prompt</code>: 将输入格式化为消息模板</li>
+<li><code>llm</code>: 调用语言模型</li>
+<li><code>output_parser</code>: 结构化解析结果</li>
+</ul>
+<hr>
+<h2 id="6-RunnableLambda-用法详解"><a href="#6-RunnableLambda-用法详解" class="headerlink" title="6. RunnableLambda 用法详解"></a>6. RunnableLambda 用法详解</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.runnables <span class="keyword">import</span> RunnableLambda</span><br><span class="line"></span><br><span class="line">square_chain = RunnableLambda(<span class="keyword">lambda</span> x: x * x)</span><br><span class="line"><span class="built_in">print</span>(square_chain.invoke(<span class="number">3</span>))  <span class="comment"># 输出 9</span></span><br></pre></td></tr></table></figure>
+
+<p>适用于：</p>
+<ul>
+<li>自定义前后处理逻辑</li>
+<li>手动构建规则逻辑</li>
+<li>灵活地插入数据操作步骤</li>
+</ul>
+<hr>
+<h2 id="7-RunnableParallel-并行处理"><a href="#7-RunnableParallel-并行处理" class="headerlink" title="7. RunnableParallel 并行处理"></a>7. RunnableParallel 并行处理</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">parallel = RunnableParallel(&#123;</span><br><span class="line">    <span class="string">&quot;a&quot;</span>: RunnableLambda(<span class="keyword">lambda</span> x: x + <span class="number">1</span>),</span><br><span class="line">    <span class="string">&quot;b&quot;</span>: RunnableLambda(<span class="keyword">lambda</span> x: x * <span class="number">2</span>),</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(parallel.invoke(<span class="number">5</span>))  <span class="comment"># 输出 &#123;&#x27;a&#x27;: 6, &#x27;b&#x27;: 10&#125;</span></span><br></pre></td></tr></table></figure>
+
+<p>适用于：</p>
+<ul>
+<li>同时运行多个模型 &#x2F; prompt 方案</li>
+<li>投票式选择方案</li>
+<li>性能优化并行推理</li>
+</ul>
+<hr>
+<h2 id="8-实用链式组合示例"><a href="#8-实用链式组合示例" class="headerlink" title="8. 实用链式组合示例"></a>8. 实用链式组合示例</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">summary_chain = summary_prompt.partial(format_instructions=format_instructions) | llm | output_parser</span><br><span class="line"></span><br><span class="line">input_processor = RunnableParallel(&#123;</span><br><span class="line">    <span class="string">&quot;summary_prod&quot;</span>: summary_chain.with_config(callbacks=[ConsoleCallbackHandler()]),</span><br><span class="line">    <span class="string">&quot;templates&quot;</span>: RunnableLambda(<span class="keyword">lambda</span> x: x[<span class="string">&quot;templates&quot;</span>])</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">recommend_chain = prompt | llm</span><br><span class="line"></span><br><span class="line">triple_recommend = RunnableParallel(&#123;</span><br><span class="line">    <span class="string">&quot;result1&quot;</span>: recommend_chain,</span><br><span class="line">    <span class="string">&quot;result2&quot;</span>: recommend_chain,</span><br><span class="line">    <span class="string">&quot;result3&quot;</span>: recommend_chain</span><br><span class="line">&#125;)</span><br><span class="line"></span><br><span class="line">combined_chain = input_processor | triple_recommend</span><br></pre></td></tr></table></figure>
+
+<h3 id="说明："><a href="#说明：" class="headerlink" title="说明："></a>说明：</h3><ul>
+<li><code>summary_chain</code>: 获取功能摘要</li>
+<li><code>RunnableParallel</code>: 将摘要与模版传入下游链</li>
+<li><code>recommend_chain</code>: 模型推荐逻辑</li>
+<li><code>triple_recommend</code>: 多次调用 LLM，增强稳定性</li>
+<li><code>combined_chain</code>: 组合以上逻辑执行</li>
+</ul>
+<hr>
+<h2 id="9-ConsoleCallbackHandler-用法"><a href="#9-ConsoleCallbackHandler-用法" class="headerlink" title="9. ConsoleCallbackHandler 用法"></a>9. ConsoleCallbackHandler 用法</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.tracers <span class="keyword">import</span> ConsoleCallbackHandler</span><br><span class="line"></span><br><span class="line">chain = some_runnable.with_config(callbacks=[ConsoleCallbackHandler()])</span><br></pre></td></tr></table></figure>
+
+<p>用于在运行时打印每一步的输入和输出，方便调试链路。</p>
+<hr>
+<h2 id="10-LangChain-模块拆分（核心模块）"><a href="#10-LangChain-模块拆分（核心模块）" class="headerlink" title="10. LangChain 模块拆分（核心模块）"></a>10. LangChain 模块拆分（核心模块）</h2><ul>
+<li><code>langchain_core</code>: 包含所有轻量、无模型依赖的核心组件</li>
+<li><code>langchain</code>: 扩展组件，支持工具、数据库、agent 等</li>
+<li><code>langchain_openai</code>: OpenAI 模型接入封装</li>
+<li><code>langchain_community</code>: 社区贡献的连接器、工具</li>
+</ul>
+<hr>
+<h2 id="11-组合技巧与最佳实践"><a href="#11-组合技巧与最佳实践" class="headerlink" title="11. 组合技巧与最佳实践"></a>11. 组合技巧与最佳实践</h2><ul>
+<li>使用 <code>partial()</code> 预注入常量参数</li>
+<li>合理使用 <code>RunnableLambda</code> 将原生 Python 融入链中</li>
+<li>使用 <code>StructuredOutputParser</code> 保证输出结构可靠性</li>
+<li>使用 <code>RunnableParallel</code> 提升吞吐&#x2F;多路径思维能力</li>
+<li>用 <code>with_config(callbacks=[...])</code> 进行链级调试</li>
+</ul>
+<h2 id="RunnableBranch"><a href="#RunnableBranch" class="headerlink" title="RunnableBranch"></a>RunnableBranch</h2><h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><p><code>RunnableBranch</code> 是 LangChain 提供的条件逻辑执行组件。它根据输入动态选择对应的 <code>Runnable</code>（即链）来执行，类似传统编程语言中的 <code>if-elif-else</code> 分支结构。</p>
+<h3 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h3><p>适用于以下典型场景：</p>
+<ul>
+<li>根据用户输入类型决定执行哪一条链</li>
+<li>多意图识别处理：问答、翻译、摘要等</li>
+<li>模型&#x2F;Prompt 的动态路由</li>
+<li>fallback 降级链执行（提供默认处理逻辑）</li>
+</ul>
+<h3 id="基本用法"><a href="#基本用法" class="headerlink" title="基本用法"></a>基本用法</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.runnables <span class="keyword">import</span> RunnableBranch, RunnableLambda</span><br><span class="line"></span><br><span class="line">branch = RunnableBranch(</span><br><span class="line">    (<span class="keyword">lambda</span> x: x[<span class="string">&quot;type&quot;</span>] == <span class="string">&quot;sum&quot;</span>, RunnableLambda(<span class="keyword">lambda</span> x: x[<span class="string">&quot;a&quot;</span>] + x[<span class="string">&quot;b&quot;</span>])),</span><br><span class="line">    (<span class="keyword">lambda</span> x: x[<span class="string">&quot;type&quot;</span>] == <span class="string">&quot;concat&quot;</span>, RunnableLambda(<span class="keyword">lambda</span> x: x[<span class="string">&quot;a&quot;</span>] + x[<span class="string">&quot;b&quot;</span>])),</span><br><span class="line">    RunnableLambda(<span class="keyword">lambda</span> x: <span class="string">&quot;default result&quot;</span>)  <span class="comment"># 默认执行链</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">result = branch.invoke(&#123;<span class="string">&quot;type&quot;</span>: <span class="string">&quot;sum&quot;</span>, <span class="string">&quot;a&quot;</span>: <span class="number">2</span>, <span class="string">&quot;b&quot;</span>: <span class="number">3</span>&#125;)</span><br><span class="line"><span class="comment"># 输出: 5</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="结构说明"><a href="#结构说明" class="headerlink" title="结构说明"></a>结构说明</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">RunnableBranch(</span><br><span class="line">    (条件函数<span class="number">1</span>, runnable1),</span><br><span class="line">    (条件函数<span class="number">2</span>, runnable2),</span><br><span class="line">    ...,</span><br><span class="line">    默认runnable  <span class="comment"># 可选但建议设置</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>条件函数</strong>：接收一个输入参数 <code>x</code>，返回 <code>True</code> &#x2F; <code>False</code></li>
+<li><strong>runnable</strong>：任意实现 <code>Runnable</code> 接口的组件（如 <code>RunnableLambda</code>, <code>ChatOpenAI</code> 等）</li>
+<li><strong>默认分支</strong>：当所有条件都不满足时执行</li>
+</ul>
+<h3 id="进阶示例：意图分类路由"><a href="#进阶示例：意图分类路由" class="headerlink" title="进阶示例：意图分类路由"></a>进阶示例：意图分类路由</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.runnables <span class="keyword">import</span> RunnableBranch, RunnableLambda</span><br><span class="line"></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">is_math_task</span>(<span class="params">x</span>): <span class="keyword">return</span> <span class="string">&quot;math&quot;</span> <span class="keyword">in</span> x[<span class="string">&quot;task&quot;</span>]</span><br><span class="line"><span class="keyword">def</span> <span class="title function_">is_translation</span>(<span class="params">x</span>): <span class="keyword">return</span> <span class="string">&quot;translate&quot;</span> <span class="keyword">in</span> x[<span class="string">&quot;task&quot;</span>]</span><br><span class="line"></span><br><span class="line">math_chain = RunnableLambda(<span class="keyword">lambda</span> x: <span class="string">f&quot;<span class="subst">&#123;x[<span class="string">&#x27;input&#x27;</span>]&#125;</span> 的平方是 <span class="subst">&#123;x[<span class="string">&#x27;input&#x27;</span>]**<span class="number">2</span>&#125;</span>&quot;</span>)</span><br><span class="line">translation_chain = RunnableLambda(<span class="keyword">lambda</span> x: <span class="string">f&quot;将 <span class="subst">&#123;x[<span class="string">&#x27;input&#x27;</span>]&#125;</span> 翻译为英文是 &#x27;example&#x27;&quot;</span>)</span><br><span class="line"></span><br><span class="line">branch_chain = RunnableBranch(</span><br><span class="line">    (is_math_task, math_chain),</span><br><span class="line">    (is_translation, translation_chain),</span><br><span class="line">    RunnableLambda(<span class="keyword">lambda</span> x: <span class="string">&quot;未知任务&quot;</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 示例调用</span></span><br><span class="line">branch_chain.invoke(&#123;<span class="string">&quot;task&quot;</span>: <span class="string">&quot;math&quot;</span>, <span class="string">&quot;input&quot;</span>: <span class="number">5</span>&#125;)</span><br><span class="line"><span class="comment"># 输出: 5 的平方是 25</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h3><ul>
+<li>条件函数按顺序匹配，匹配到第一个 <code>True</code> 的分支即执行，<strong>不会继续匹配</strong>。</li>
+<li>建议始终添加一个默认分支作为 fallback，避免未匹配时报错。</li>
+<li>可以嵌套使用 <code>RunnableBranch</code> 构建更复杂的决策树逻辑。</li>
+<li>可结合 <code>RunnableParallel</code> 实现条件 + 并行执行策略。</li>
+</ul>
+<h3 id="典型搭配组件"><a href="#典型搭配组件" class="headerlink" title="典型搭配组件"></a>典型搭配组件</h3><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>用途说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>RunnableLambda</code></td>
+<td>编写自定义处理逻辑</td>
+</tr>
+<tr>
+<td><code>ChatOpenAI</code> 等模型链</td>
+<td>用于根据条件调用不同模型或 prompt</td>
+</tr>
+<tr>
+<td><code>RunnablePassthrough</code></td>
+<td>无修改地返回输入，常用于默认逻辑</td>
+</tr>
+<tr>
+<td><code>RunnableParallel</code></td>
+<td>用于在分支中并行执行多个处理链</td>
+</tr>
+</tbody></table>
+
+    </article>
+    
+    <div class="read-nums">
+      <!-- id 将作为查询条件 -->
+      <span id="2025/06/04/Langchain核心概念/" class="leancloud_visitors" data-flag-title="Your Article Title">
+        <em class="post-meta-item-text">浏览量</em>
+        <i class="leancloud-visitors-count"></i>
+      </span>
+    </div>
+    <div class="comments-intro">
+      <h2>评论区</h2>
+      <p>欢迎你留下宝贵的意见，昵称输入QQ号会显示QQ头像哦~</p>
+    </div>
+    <div id="vcomments" class="vcomments"></div>
+    
+  </div>
+  <div class="article-catelogue">
+    <div class="article-catelogue--wrapper">
+      <div class="catelogue catelogue-1">
+        <h3>目录</h3>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LangChain-%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="toc-number">1.</span> <span class="toc-text">LangChain 核心概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AF-LangChain%EF%BC%9F"><span class="toc-number">1.1.</span> <span class="toc-text">1. 什么是 LangChain？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-LCEL%EF%BC%88LangChain-Expression-Language%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">2. LCEL（LangChain Expression Language）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%89%B9%E7%82%B9%EF%BC%9A"><span class="toc-number">1.2.1.</span> <span class="toc-text">特点：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B8%B8%E7%94%A8%E7%BB%84%E6%88%90%E6%96%B9%E5%BC%8F%EF%BC%9A"><span class="toc-number">1.2.2.</span> <span class="toc-text">常用组成方式：</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E4%BB%80%E4%B9%88%E6%98%AF%E9%93%BE%EF%BC%88Chain%EF%BC%89%EF%BC%9F"><span class="toc-number">1.3.</span> <span class="toc-text">3. 什么是链（Chain）？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Runnable-%E4%BD%93%E7%B3%BB%E6%80%BB%E8%A7%88"><span class="toc-number">1.4.</span> <span class="toc-text">4. Runnable 体系总览</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%B8%B8%E8%A7%81%E7%B1%BB%E5%9E%8B%E5%8F%8A%E7%94%A8%E9%80%94%EF%BC%9A"><span class="toc-number">1.4.1.</span> <span class="toc-text">常见类型及用途：</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E4%B8%B2%E8%A1%8C%E9%93%BE%E6%9E%84%E5%BB%BA"><span class="toc-number">1.5.</span> <span class="toc-text">5. 串行链构建</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-RunnableLambda-%E7%94%A8%E6%B3%95%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.6.</span> <span class="toc-text">6. RunnableLambda 用法详解</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-RunnableParallel-%E5%B9%B6%E8%A1%8C%E5%A4%84%E7%90%86"><span class="toc-number">1.7.</span> <span class="toc-text">7. RunnableParallel 并行处理</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E5%AE%9E%E7%94%A8%E9%93%BE%E5%BC%8F%E7%BB%84%E5%90%88%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.8.</span> <span class="toc-text">8. 实用链式组合示例</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AF%B4%E6%98%8E%EF%BC%9A"><span class="toc-number">1.8.1.</span> <span class="toc-text">说明：</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-ConsoleCallbackHandler-%E7%94%A8%E6%B3%95"><span class="toc-number">1.9.</span> <span class="toc-text">9. ConsoleCallbackHandler 用法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-LangChain-%E6%A8%A1%E5%9D%97%E6%8B%86%E5%88%86%EF%BC%88%E6%A0%B8%E5%BF%83%E6%A8%A1%E5%9D%97%EF%BC%89"><span class="toc-number">1.10.</span> <span class="toc-text">10. LangChain 模块拆分（核心模块）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E7%BB%84%E5%90%88%E6%8A%80%E5%B7%A7%E4%B8%8E%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5"><span class="toc-number">1.11.</span> <span class="toc-text">11. 组合技巧与最佳实践</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#RunnableBranch"><span class="toc-number">1.12.</span> <span class="toc-text">RunnableBranch</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%80%E4%BB%8B"><span class="toc-number">1.12.1.</span> <span class="toc-text">简介</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BD%BF%E7%94%A8%E5%9C%BA%E6%99%AF"><span class="toc-number">1.12.2.</span> <span class="toc-text">使用场景</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9F%BA%E6%9C%AC%E7%94%A8%E6%B3%95"><span class="toc-number">1.12.3.</span> <span class="toc-text">基本用法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E6%9E%84%E8%AF%B4%E6%98%8E"><span class="toc-number">1.12.4.</span> <span class="toc-text">结构说明</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%BF%9B%E9%98%B6%E7%A4%BA%E4%BE%8B%EF%BC%9A%E6%84%8F%E5%9B%BE%E5%88%86%E7%B1%BB%E8%B7%AF%E7%94%B1"><span class="toc-number">1.12.5.</span> <span class="toc-text">进阶示例：意图分类路由</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%B3%A8%E6%84%8F%E4%BA%8B%E9%A1%B9"><span class="toc-number">1.12.6.</span> <span class="toc-text">注意事项</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%85%B8%E5%9E%8B%E6%90%AD%E9%85%8D%E7%BB%84%E4%BB%B6"><span class="toc-number">1.12.7.</span> <span class="toc-text">典型搭配组件</span></a></li></ol></li></ol></li></ol>
+      </div>
+      
+        <div class="catelogue catelogue-2">
+           
+          
+            <p>
+              <span>下一篇</span>
+              <a href="/2025/05/30/并发编程/">并发编程</a>
+            </p>
+          
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // var定义，避免pjax重新进来造成的重复声明错误
+  var config = JSON.parse('{"enable":true,"appId":"Pf8zCXGEH1qsprnWfikVVujL-gzGzoHsz","appKey":"qOqoiUHhH1TGtLRUYURkLRQX","placeholder":"请留下你宝贵的意见吧~","meta":["nick"],"recordIP":true,"visitor":true,"enableQQ":true}')
+  new Valine({
+    el: '#vcomments',
+    appId: config.appId,
+    appKey: config.appKey,
+    placeholder: config.placeholder,
+    meta: config.meta,
+    recordIP: config.recordIP,
+    visitor: config.visitor,
+    enableQQ: config.enableQQ,
+    path: '2025/06/04/Langchain核心概念/'
+  })
+</script>
+
+
+<script>
+  $(document).on('pjax:complete', function() {
+    const tocs = document.querySelector('.toc')
+    const links = tocs ? tocs.querySelectorAll('a') : []
+    links.forEach(link => {
+      link.addEventListener('click', e => {
+        const href = decodeURIComponent(e.href)
+        href.search(/#(.*)/)
+        const id = RegExp.$1
+        const target = document.querySelector('#' + id)
+        const top = target.offsetTop
+        document.documentElement.scrollTo({
+          top: top - 100,
+          behavior: 'smooth'
+        })
+        e.preventDefault()
+      })
+    })
+  })
+</script> 
+
+</div>
+      <div class="main-right-wrapper"><div class="main-right">
+  <div class="main-right--board">
+    <div class="main-right--title">
+      <h5>公告栏</h5>
+      <i class="iconfont icon-gonggao"></i>
+    </div>
+    <div class="main-right--content">
+      Hello~大噶好。唔系可乐爱宅着，欢迎你们来到我的博客小站，希望能在这里收获到有用的东西哦！ 
+    </div>
+  </div>
+
+  <div id="aplayer" class="main-right--music"></div>
+
+  <div class="operate-items">
+    <div class="operate-item backtop">
+      <i class="iconfont icon-huidaodingbu"></i>
+      <span>回到顶部</span>
+    </div>
+    
+    <div class="operate-item turn-comment hidden">
+      <i class="iconfont icon-pinglun"></i>
+      <span>查看评论</span>
+    </div>
+    
+  </div>
+
+  <div class="main-right--site">
+    <div class="main-right--power">
+      <p>Power By <a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/docs/">Hexo</a>.</p>
+      <p>Theme：<a target="_blank" rel="noopener" href="https://github.com/Aizener/hexo-theme-cola">Cola.</a></p>
+    </div>
+    <p class="main-right--refer"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">蜀ICP备2022005384号-1</a> </p>
+  </div>
+</div>
+
+<script>
+  function setOperateItem () {
+    const reg = /\d{4}\/\d{2}\/\d{2}\/.+/
+    const path = location.pathname
+    const operateDom = document.querySelector('.main-right .operate-items')
+    const commentDom = document.querySelector('.turn-comment')
+    const cateloguDom = document.querySelector('.article-catelogue > .article-catelogue--wrapper');
+
+    if (commentDom) {
+      if (reg.test(path) || path.match(/\/log\/.+/)) {
+        commentDom.classList.remove('hidden')
+        const newDom = operateDom.cloneNode(true);
+        const _backtopDom = newDom.querySelector('.backtop');
+        const _commentDom = newDom.querySelector('.turn-comment');
+        _backtopDom.addEventListener('click', () => backTopEvent());
+        _commentDom.addEventListener('click', () => commentDomEvent());
+        cateloguDom.appendChild(newDom);
+      } else {
+        commentDom.classList.add('hidden')
+      }
+    }
+  }
+
+  setOperateItem()
+  const musics = JSON.parse(`[{"name":"安河桥","artist":"宋冬野","url":"http://ting6.yymp3.net:82/new25/songdongye/11.mp3","cover":"https://img2.baidu.com/it/u=1260056724,1076343118&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500"},{"name":"卡布达","artist":"暂无","url":"music/kabuda.mp3","cover":"https://img2.baidu.com/it/u=705831265,2862720033&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500"}]`)
+  const ap = new APlayer({
+    container: document.querySelector('#aplayer'),
+    audio: musics,
+  })
+
+  $(document).on('pjax:complete', function() {
+    setOperateItem()
+  })
+
+  document.querySelector('.backtop').addEventListener('click', () => {
+    backTopEvent();
+  })
+  const dom = document.querySelector('.turn-comment')
+  dom && dom.addEventListener('click', () => {
+    commentDomEvent();
+  })
+
+  function backTopEvent() {
+    document.documentElement.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
+  }
+
+  function commentDomEvent() {
+    const commentDom = document.querySelector('.comments-intro')
+    if (!commentDom) return
+    const top = commentDom.offsetTop, height = commentDom.offsetHeight
+    document.documentElement.scrollTo({
+      top: top - 2 * height,
+      behavior: 'smooth'
+    })
+  }
+</script></div>
+    </section>
+  </div>
+  <div id="progress" class="progress"></div>
+  <div id="gray" class="gray"></div>
+
+  <script>
+    function initScroll () {
+      document.addEventListener('scroll', () => {
+        const doc = document.documentElement
+        const scrollTop = doc.scrollTop
+        const pageHeight = doc.offsetHeight
+        const clientHeight = doc.clientHeight
+        const ratio = scrollTop / (pageHeight - clientHeight)
+        const progress = document.querySelector('#progress')
+        const avatarImg = document.querySelector('.main-left--avatar')
+        progress.style.width = (100 * ratio) + '%'
+        avatarImg.style.transform = `rotate(${360 * ratio}deg)`
+      })
+    }
+
+    const rootPath = "/"
+
+    const checkAndSetArticlePageLayout = () => {
+      const path = location.pathname.replace(rootPath, '');
+      if (
+        /^\/?\d{4}\/\d{2}\/\d{2}\/.*/.test(path) ||
+        /^log\/.+/.test(path)
+      ) {
+        $('.main-container, .main-right, .main-right-wrapper').addClass('is-article')
+      } else {
+        $('.main-container, .main-right, .main-right-wrapper').removeClass('is-article')
+      }
+    }
+
+    const gray = "none"
+    const setGrayStyle = () => {
+      if (gray === 'none') {
+        return
+      } else if (gray === 'index') {
+        location.pathname === '/' ? $('#gray').show() : $('#gray').hide()
+      } else if (gray === 'all') {
+        $('#gray').show()
+      }
+    }
+    setGrayStyle()
+
+
+    window.onload = function () {
+      checkAndSetArticlePageLayout()
+      setTimeout(() => {
+        $('#load').slideUp()
+        $('#container').slideToggle()
+        setTimeout(() => {
+          initScroll();
+        }, 500)
+      }, 500)
+    }
+    
+    let status = 0
+    // 对所有链接跳转事件绑定pjax容器container
+    $(document).pjax('a[target!=_blank]', '#main-container', {
+      container: '#main-container',
+      fragment: '#main-container',
+      timeout: 8000
+    })
+
+    $(document).on('pjax:start', function() {
+    })
+    $(document).on('pjax:complete', function() {
+      status = 0
+      $('.main-container').addClass('to-up').on('animationend', function() {
+        $(this).removeClass('to-up')
+      })
+      setGrayStyle()
+      checkAndSetArticlePageLayout()
+    })
+    $(document).on('pjax:popstate', function() {
+      status = -1
+      checkAndSetArticlePageLayout()
+    });
+  </script>
+</body>
+</html>
