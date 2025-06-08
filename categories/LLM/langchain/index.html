@@ -193,7 +193,7 @@
   const ipt = document.querySelector('#search-input')
   const btn = document.querySelector('#search-btn')
   const layer = document.querySelector('#search-layer')
-  const posts = JSON.parse(`[{"title":"Langchain核心概念","path":"2025/06/04/Langchain核心概念/"},{"title":"并发编程","path":"2025/05/30/并发编程/"}]`)
+  const posts = JSON.parse(`[{"title":"LangChain之Rag","path":"2025/06/09/LangChain之Rag/"},{"title":"Langchain核心概念","path":"2025/06/04/Langchain核心概念/"},{"title":"并发编程","path":"2025/05/30/并发编程/"}]`)
   ipt.addEventListener('keyup', e => {
     if (e.key === 'Enter') {
       handleSearch()
@@ -258,13 +258,13 @@
       <div class="main-left--statics">
         <a href="/categories">
           <div>
-            <span>5</span>
+            <span>6</span>
             <span>分类</span>
           </div>
         </a>
         <a href="/tags">
           <div>
-            <span>3</span>
+            <span>4</span>
             <span>标签</span>
           </div>
         </a>
@@ -327,7 +327,7 @@
       </h5>
       <p class="main-left--subtitle">
         <span>文章数目：</span>
-        <span>2 篇</span>
+        <span>3 篇</span>
       </p>
       <p class="main-left--subtitle">
         <span>最近动态：</span>
@@ -335,7 +335,7 @@
       </p>
       <p class="main-left--subtitle">
         <span>上线时间：</span>
-        <span>1204天</span>
+        <span>1209天</span>
       </p>
       <p class="main-left--subtitle">
         <span>当前版本：</span>
@@ -354,6 +354,32 @@
       <div class="index-article">
         <!-- <img class="index-article--cover" src="/imgs/default-cover.webp" alt=""> -->
         <div class="index-article--box">
+          <img class="index-article--cover" data-cover="imgs/default-cover.webp" alt="LangChain之Rag" />
+        </div>
+        <div class="index-article--content">
+          <a href="/2025/06/09/LangChain%E4%B9%8BRag/">LangChain之Rag </a>
+          <div>
+            
+              <p>
+                <a class="post-category-link" href="/categories/LLM/">LLM</a>, <a class="post-category-link" href="/categories/LLM/langchain/">Langchain</a>, <a class="post-category-link" href="/categories/LLM/langchain/Rag/">Rag</a>
+              </p>
+            
+            
+              <p>
+                <a class="-link" href="/tags/langchain/" rel="tag">langchain</a><span> ◆ </span><a class="-link" href="/tags/Rag/" rel="tag">Rag</a>
+              </p>
+            
+          </div>
+          <div class="bg"></div>
+        </div>
+      </div>
+    
+  </div>
+  <div class="index-center">
+    
+      <div class="index-article">
+        <!-- <img class="index-article--cover" data-cover="" src="/imgs/default-cover.webp" alt=""> -->
+        <div class="index-article--box">
           <img class="index-article--cover" data-cover="imgs/default-cover.webp" alt="Langchain核心概念" />
         </div>
         <div class="index-article--content">
@@ -361,7 +387,7 @@
           <div>
             
               <p>
-                <a class="post-category-link" href="/categories/LLM/">LLM</a>, <a class="post-category-link" href="/categories/LLM/langchain/">Langchain</a>
+                <a class="category-link" href="/categories/LLM/">LLM</a>, <a class="category-link" href="/categories/LLM/langchain/">Langchain</a>
               </p>
             
             
@@ -375,14 +401,11 @@
       </div>
     
   </div>
-  <div class="index-center">
-    
-  </div>
   <div class="index-right">
     <div class="index-right-wrapper">
-      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/LLM/">LLM</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/LLM/langchain/">Langchain</a></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF/java/">Java</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF/java/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a></li></ul></li></ul></li></ul>
-      <ul class="tags" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/langchain/" rel="tag">langchain</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Runnable/" rel="tag">Runnable</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LCEL/" rel="tag">LCEL</a></li></ul>
-      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">2025年06月</a><span class="archive-list-count">1</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">2025年05月</a><span class="archive-list-count">1</span></li></ul>
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/LLM/">LLM</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/LLM/langchain/">Langchain</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/LLM/langchain/Rag/">Rag</a></li></ul></li></ul></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF/">技术</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF/java/">Java</a><ul class="category-list-child"><li class="category-list-item"><a class="category-list-link" href="/categories/%E6%8A%80%E6%9C%AF/java/%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">并发编程</a></li></ul></li></ul></li></ul>
+      <ul class="tags" itemprop="keywords"><li class="tag-list-item"><a class="tag-list-link" href="/tags/langchain/" rel="tag">langchain</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Runnable/" rel="tag">Runnable</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/Rag/" rel="tag">Rag</a></li><li class="tag-list-item"><a class="tag-list-link" href="/tags/LCEL/" rel="tag">LCEL</a></li></ul>
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/06/">2025年06月</a><span class="archive-list-count">2</span></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2025/05/">2025年05月</a><span class="archive-list-count">1</span></li></ul>
     </div>
   </div>
 </div>

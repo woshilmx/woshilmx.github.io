@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>我的技术与生活——LangChain之Rag | 祥仔的个人基地</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="/imgs/shortcut-icon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="/css/public.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/iconfont.css" />
+  <link rel="stylesheet" href="/css/APlayer.min.css" />
+  <script src="/js/APlayer.min.js"></script>
+  <script src="/js/jquery.min.js"></script>
+  <script src="/js/jquery.pjax.min.js"></script>
+
+  <script src='//unpkg.com/valine/dist/Valine.min.js'></script>
+  <script>
+    document.title = `我的技术与生活——LangChain之Rag`
+  </script>
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+<style>
+  .load {
+    width: 100%;
+    height: 100vh;
+    background-color: rgb(37, 35, 40);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    z-index: 9999;
+  }
+  .load-circle {
+    width: 80px;
+    height: 80px;
+    border: 8px solid orange;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: rotate 1s linear infinite;
+    filter: drop-shadow(0 0 3px orange);
+  }
+  .load-circle-inner {
+    width: 40px;
+    height: 40px;
+    border: 8px solid orange;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: rotate-reverse .5s linear infinite;
+  }
+  .load-text {
+    margin-top: 20px;
+    font-size: 24px;
+    color: orange;
+    display: flex;
+  }
+  .load-text span {
+    margin: 0 5px;
+    text-shadow: 5px 5px 5px orange;
+    animation: move 1s linear infinite;
+  }
+  .load-text span:nth-child(1) {
+    animation-delay: -0.6s;
+  }
+  .load-text span:nth-child(2) {
+    animation-delay: -0.5s;
+  }
+  .load-text span:nth-child(3) {
+    animation-delay: -0.4s;
+  }
+  .load-text span:nth-child(4) {
+    animation-delay: -0.3s;
+  }
+  .load-text span:nth-child(5) {
+    animation-delay: -0.2s;
+  }
+  .load-text span:nth-child(6) {
+    animation-delay: -0.1s;
+  }
+  @keyframes rotate {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes rotate-reverse {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(-360deg); }
+  }
+  @keyframes move {
+    0% { transform: translateY(0%) rotate(0) scale(1); }
+    20% { transform: translateY(20%) rotate(10deg) scale(1.2); }
+    80% { transform: translateY(-10%) rotate(-20deg) scale(.8);}
+    100% { transform: translateY(0) rotate(0) scale(1); }
+  }
+
+  .progress {
+    position: fixed;
+    left: 0; top: 0;
+    width: 0;
+    height: 3px;
+    background-color: green;
+    transition: all cubic-bezier(0.215, 0.610, 0.355, 1) .1s;
+    z-index: 9999;
+  }
+
+  .to-up {
+    animation: toUp .5s 1;
+  }
+  .gray {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 9999;
+    display: none;
+    pointer-events: none;
+    background-color: #000;
+    mix-blend-mode: color;
+  }
+  @keyframes toUp {
+    from { transform: translateY(15px); opacity: 0; }
+    to { transform: translateY(0) ; opacity: 1; }
+  }
+</style>
+<body>
+  <div id="load" class="load">
+    <div class="load-circle">
+      <div class="load-circle-inner"></div>
+    </div>
+    <p class="load-text">
+      <span>L</span>
+      <span>O</span>
+      <span>A</span>
+      <span>D</span>
+      <span>I</span>
+      <span>N</span>
+      <span>G</span>
+    </p>
+  </div>
+  <div id="container" class="container w-100 vh-100" style="display: none;">
+    <header class="header">
+  <div class="header-wrapper">
+    <div class="header-left">
+      <div class="header-search">
+        <input id="search-input" type="text" class="header-search--input" placeholder="请输入要检索的文章标题" />
+        <span id="search-btn" class="header-search--icon"><i class="iconfont icon-sousuo"></i></span>
+      </div>
+      <div id="search-layer" class="header-search--layer hidden">
+        <p class="title">
+          <span>以下是搜索内容：</span>
+          <span id="close-layer-btn">关闭</span>
+        </p>
+        <ul>
+        </ul>
+      </div>
+    </div>
+    <div class="header-right">
+      <ul class="header-menu">
+        <li>
+          <a href="https://woshilmx.github.io/">
+            <i class="header-menu--icon iconfont icon-shouye"></i>
+            <span class="header-menu--span">首页</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://woshilmx.github.io/log">
+            <i class="header-menu--icon iconfont icon-rizhi"></i>
+            <span class="header-menu--span">日志</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://woshilmx.github.io/link">
+            <i class="header-menu--icon iconfont icon-youqinglianjie"></i>
+            <span class="header-menu--span">友情链接</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://woshilmx.github.io/about">
+            <i class="header-menu--icon iconfont icon-guanyuwomen"></i>
+            <span class="header-menu--span">关于我</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<script>
+  const ipt = document.querySelector('#search-input')
+  const btn = document.querySelector('#search-btn')
+  const layer = document.querySelector('#search-layer')
+  const posts = JSON.parse(`[{"title":"LangChain之Rag","path":"2025/06/09/LangChain之Rag/"},{"title":"Langchain核心概念","path":"2025/06/04/Langchain核心概念/"},{"title":"并发编程","path":"2025/05/30/并发编程/"}]`)
+  ipt.addEventListener('keyup', e => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  })
+  btn.addEventListener('click', () => {
+    handleSearch()
+  })
+
+  document.querySelector('#close-layer-btn').addEventListener('click', () => {
+    layer.classList.toggle('hidden')
+  })
+
+  function handleSearch() {
+    if (ipt.value.trim() === '') {
+      return
+    }
+    let html = ''
+    const targetPosts = posts.filter(post => post.title.includes(ipt.value))
+    targetPosts.forEach(post => {
+      html += `
+        <li>
+          <div>
+            <a href="/${post.path}">${post.title.replace(new RegExp(ipt.value), `<span>${ipt.value}</span>`)}</a>
+          </div>
+          <img src="${post.cover || '/imgs/default-cover.webp' }" />
+        </li>
+      `
+    })
+    if (html.trim () === '') {
+      html += '<p class="empty">没有搜索到内容</p>'
+    }
+    layer.querySelector('ul').innerHTML = html
+    layer.classList.remove('hidden')
+  }
+</script> 
+    <section id="main" class="main">
+      <div class="main-left-wrapper">
+<div class="main-left">
+  <div class="main-left--block">
+    <div class="main-left--info">
+      <img src="/imgs/avatar.jpg"" class="main-left--avatar" />
+      <div class="main-left--intro">
+        <p class="main-left--name">Cola.</p>
+        <div class="main-left--tags">
+          <span class="main-left--tag">中二</span>
+          <span class="main-left--tag">宅</span>
+        </div>
+      </div>
+    </div>
+  
+    <div>
+      <div class="main-left--motto">
+        <p>“花有重开日，人无再少年”</p>
+        <p>“一个简单普通的男孩”</p>
+      </div>
+      <div class="main-left--github">
+        <span class="line"></span>
+        <a target="_blank" rel="noopener" href="https://github.com/Aizener"><i class="logo iconfont icon-github-fill"></i></a>
+        <span class="line"></span>
+      </div>
+      <div class="main-left--statics">
+        <a href="/categories">
+          <div>
+            <span>6</span>
+            <span>分类</span>
+          </div>
+        </a>
+        <a href="/tags">
+          <div>
+            <span>4</span>
+            <span>标签</span>
+          </div>
+        </a>
+        <a href="/archives">
+          <div>
+            <span>2 </span>
+            <span>归档</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-left--block">
+    <ul class="main-left--menu">
+      
+        <li>
+          <a href="/">
+            <span class="header-menu--span">小站首页</span>
+            <i class="header-menu--icon iconfont icon-shouye"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/log">
+            <span class="header-menu--span">个人日志</span>
+            <i class="header-menu--icon iconfont icon-rizhi"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/link">
+            <span class="header-menu--span">友情链接</span>
+            <i class="header-menu--icon iconfont icon-youqinglianjie"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/about">
+            <span class="header-menu--span">关于自己</span>
+            <i class="header-menu--icon iconfont icon-guanyuwomen"></i>
+          </a>
+        </li>
+      
+        <li>
+          <a href="/tools">
+            <span class="header-menu--span">我的工具</span>
+            <i class="header-menu--icon iconfont icon-gongju"></i>
+          </a>
+        </li>
+      
+    </ul>
+  </div>
+
+  <div class="main-left--block">
+    <div class="main-left--site">
+      <h5 class="main-left--title">
+        <span>站点信息</span>
+        <i class="iconfont icon-zhandian"></i>
+      </h5>
+      <p class="main-left--subtitle">
+        <span>文章数目：</span>
+        <span>3 篇</span>
+      </p>
+      <p class="main-left--subtitle">
+        <span>最近动态：</span>
+        <span>今天</span>
+      </p>
+      <p class="main-left--subtitle">
+        <span>上线时间：</span>
+        <span>1209天</span>
+      </p>
+      <p class="main-left--subtitle">
+        <span>当前版本：</span>
+        <span>v1.0.2</span>
+      </p>
+    </div>
+  </div>
+</div></div>
+      <div id="main-container" class="main-container">
+
+
+  <link rel="stylesheet" href="/css/partial/article.css" />
+
+<div class="article-container">
+  <div class="article">
+    <h1 class="article-title">LangChain之Rag</h1>
+    <div class="article-info">
+      <div class="article-info--item">
+        <div class="article-info--info">
+          
+          <div class="article-info--categories">
+            <span>分类：</span>
+            <a class="category-link" href="/categories/LLM/">LLM</a>, <a class="category-link" href="/categories/LLM/langchain/">Langchain</a>, <a class="category-link" href="/categories/LLM/langchain/Rag/">Rag</a>
+          </div>
+          
+          
+          <div class="article-info--tags">
+            <span>标签：</span>
+            <a class="tag-link" href="/tags/Rag/" rel="tag">Rag</a><a class="tag-link" href="/tags/langchain/" rel="tag">langchain</a>
+          </div>
+          
+          <p class="article-info--date">日期：2025-06-09 00:52:06</p>
+        </div>
+        <img src="/imgs/default-cover.webp" alt="" class="article-cover">
+      </div>
+    </div>
+    <article class="article-content markdown-body">
+      <h1 id="LangChain-RAG-完整使用指南"><a href="#LangChain-RAG-完整使用指南" class="headerlink" title="LangChain RAG 完整使用指南"></a>LangChain RAG 完整使用指南</h1><h2 id="一、RAG-核心流程概述"><a href="#一、RAG-核心流程概述" class="headerlink" title="一、RAG 核心流程概述"></a>一、RAG 核心流程概述</h2><p>LangChain 的 RAG (检索增强生成) 流程包含以下关键步骤：</p>
+<ol>
+<li><strong>文档加载</strong>：从各种格式的文件中读取内容</li>
+<li><strong>文本分割</strong>：将大文档切分为适合处理的片段</li>
+<li><strong>向量化</strong>：将文本转换为向量表示</li>
+<li><strong>检索(Retrieval)</strong>：根据查询找到相关文档片段</li>
+<li><strong>生成(Generation)</strong>：基于检索结果生成最终回答</li>
+</ol>
+<h2 id="二、文档加载-Document-Loading"><a href="#二、文档加载-Document-Loading" class="headerlink" title="二、文档加载 (Document Loading)"></a>二、文档加载 (Document Loading)</h2><h3 id="1-支持的文件格式"><a href="#1-支持的文件格式" class="headerlink" title="1. 支持的文件格式"></a>1. 支持的文件格式</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_community.document_loaders <span class="keyword">import</span> (</span><br><span class="line">    UnstructuredEPubLoader,  <span class="comment"># EPUB电子书</span></span><br><span class="line">    PyPDFLoader,            <span class="comment"># PDF文档</span></span><br><span class="line">    Docx2txtLoader,         <span class="comment"># Word文档</span></span><br><span class="line">    WebBaseLoader,          <span class="comment"># 网页内容</span></span><br><span class="line">    TextLoader              <span class="comment"># 纯文本</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-加载示例"><a href="#2-加载示例" class="headerlink" title="2. 加载示例"></a>2. 加载示例</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 加载单个EPUB文件</span></span><br><span class="line">loader = UnstructuredEPubLoader(<span class="string">&quot;design_patterns.epub&quot;</span>)</span><br><span class="line">documents = loader.load()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 批量加载目录下的文件</span></span><br><span class="line"><span class="keyword">from</span> langchain.document_loaders <span class="keyword">import</span> DirectoryLoader</span><br><span class="line"></span><br><span class="line">loader = DirectoryLoader(</span><br><span class="line">    <span class="string">&quot;./books/&quot;</span>,</span><br><span class="line">    glob=<span class="string">&quot;**/*.epub&quot;</span>,</span><br><span class="line">    loader_cls=UnstructuredEPubLoader</span><br><span class="line">)</span><br><span class="line">documents = loader.load()</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-元数据处理"><a href="#3-元数据处理" class="headerlink" title="3. 元数据处理"></a>3. 元数据处理</h3><p>加载时可保留或添加元数据：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Document(</span><br><span class="line">    page_content=<span class="string">&quot;文档内容...&quot;</span>,</span><br><span class="line">    metadata=&#123;</span><br><span class="line">        <span class="string">&quot;source&quot;</span>: <span class="string">&quot;design_patterns.epub&quot;</span>,</span><br><span class="line">        <span class="string">&quot;page&quot;</span>: <span class="number">42</span>,</span><br><span class="line">        <span class="string">&quot;category&quot;</span>: <span class="string">&quot;计算机&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、文本分割-Text-Splitting"><a href="#三、文本分割-Text-Splitting" class="headerlink" title="三、文本分割 (Text Splitting)"></a>三、文本分割 (Text Splitting)</h2><h3 id="1-递归字符分割器"><a href="#1-递归字符分割器" class="headerlink" title="1. 递归字符分割器"></a>1. 递归字符分割器</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_text_splitters <span class="keyword">import</span> RecursiveCharacterTextSplitter</span><br><span class="line"></span><br><span class="line">text_splitter = RecursiveCharacterTextSplitter(</span><br><span class="line">    chunk_size=<span class="number">1500</span>,       <span class="comment"># 每个块的最大字符数</span></span><br><span class="line">    chunk_overlap=<span class="number">200</span>,     <span class="comment"># 块之间的重叠字符数</span></span><br><span class="line">    length_function=<span class="built_in">len</span>,    <span class="comment"># 长度计算函数</span></span><br><span class="line">    separators=[<span class="string">&quot;\n\n&quot;</span>, <span class="string">&quot;\n&quot;</span>, <span class="string">&quot;。&quot;</span>, <span class="string">&quot;！&quot;</span>, <span class="string">&quot;？&quot;</span>, <span class="string">&quot;\.&quot;</span>, <span class="string">&quot;\!&quot;</span>, <span class="string">&quot;\?&quot;</span>, <span class="string">&quot;(?&lt;!\w\.\w)&quot;</span>, <span class="string">&quot; &quot;</span>, <span class="string">&quot;&quot;</span>]  <span class="comment"># 中文友好分隔符</span></span><br><span class="line">)</span><br><span class="line">split_docs = text_splitter.split_documents(documents)</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-分割策略建议"><a href="#2-分割策略建议" class="headerlink" title="2. 分割策略建议"></a>2. 分割策略建议</h3><ul>
+<li><strong>技术文档</strong>：较大 chunk_size (2000+)</li>
+<li><strong>对话记录</strong>：较小 chunk_size (800-1000)</li>
+<li><strong>代码文件</strong>：按函数&#x2F;类分割更有效</li>
+</ul>
+<h2 id="四、向量化-Embedding"><a href="#四、向量化-Embedding" class="headerlink" title="四、向量化 (Embedding)"></a>四、向量化 (Embedding)</h2><h3 id="1-使用OpenAI嵌入"><a href="#1-使用OpenAI嵌入" class="headerlink" title="1. 使用OpenAI嵌入"></a>1. 使用OpenAI嵌入</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_openai <span class="keyword">import</span> OpenAIEmbeddings</span><br><span class="line"></span><br><span class="line">embeddings = OpenAIEmbeddings(</span><br><span class="line">    openai_api_base=<span class="string">&quot;https://api.openai-proxy.live/v1&quot;</span>,</span><br><span class="line">    openai_api_key=<span class="string">&quot;sk-...&quot;</span>,</span><br><span class="line">    model=<span class="string">&quot;text-embedding-3-small&quot;</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-向量数据库存储"><a href="#2-向量数据库存储" class="headerlink" title="2. 向量数据库存储"></a>2. 向量数据库存储</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_chroma <span class="keyword">import</span> Chroma</span><br><span class="line"></span><br><span class="line">vector_db = Chroma.from_documents(</span><br><span class="line">    documents=split_docs,</span><br><span class="line">    embedding=embeddings,</span><br><span class="line">    persist_directory=<span class="string">&quot;./chroma_db&quot;</span>  <span class="comment"># 持久化存储</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h2 id="五、检索器-Retriever-详解"><a href="#五、检索器-Retriever-详解" class="headerlink" title="五、检索器 (Retriever) 详解"></a>五、检索器 (Retriever) 详解</h2><h3 id="1-三种检索方法对比"><a href="#1-三种检索方法对比" class="headerlink" title="1. 三种检索方法对比"></a>1. 三种检索方法对比</h3><table>
+<thead>
+<tr>
+<th align="center">方法类型</th>
+<th align="center">参数值</th>
+<th align="center">原理</th>
+<th align="center">适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><strong>相似度搜索</strong></td>
+<td align="center"><code>&quot;similarity&quot;</code> (默认)</td>
+<td align="center">基于余弦相似度返回最相似的k个文档</td>
+<td align="center">常规问答</td>
+</tr>
+<tr>
+<td align="center"><strong>最大边际相关性(MMR)</strong></td>
+<td align="center"><code>&quot;mmr&quot;</code></td>
+<td align="center">在相似性基础上增加多样性，避免重复结果</td>
+<td align="center">需要多样化结果的场景</td>
+</tr>
+<tr>
+<td align="center"><strong>相似度阈值过滤</strong></td>
+<td align="center"><code>&quot;similarity_score_threshold&quot;</code></td>
+<td align="center">只返回超过相似度阈值的文档</td>
+<td align="center">需要精确控制结果质量的场景</td>
+</tr>
+</tbody></table>
+<h3 id="2-检索器配置示例"><a href="#2-检索器配置示例" class="headerlink" title="2. 检索器配置示例"></a>2. 检索器配置示例</h3><h4 id="1-基础相似度搜索"><a href="#1-基础相似度搜索" class="headerlink" title="(1) 基础相似度搜索"></a>(1) 基础相似度搜索</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">retriever = vector_db.as_retriever(</span><br><span class="line">    search_type=<span class="string">&quot;similarity&quot;</span>,</span><br><span class="line">    search_kwargs=&#123;<span class="string">&quot;k&quot;</span>: <span class="number">5</span>&#125;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h4 id="2-MMR-多样性搜索"><a href="#2-MMR-多样性搜索" class="headerlink" title="(2) MMR 多样性搜索"></a>(2) MMR 多样性搜索</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">retriever = vector_db.as_retriever(</span><br><span class="line">    search_type=<span class="string">&quot;mmr&quot;</span>,</span><br><span class="line">    search_kwargs=&#123;</span><br><span class="line">        <span class="string">&quot;k&quot;</span>: <span class="number">5</span>,</span><br><span class="line">        <span class="string">&quot;lambda_mult&quot;</span>: <span class="number">0.3</span>  <span class="comment"># 多样性权重(0-1)</span></span><br><span class="line">    &#125;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h4 id="3-带阈值过滤的搜索"><a href="#3-带阈值过滤的搜索" class="headerlink" title="(3) 带阈值过滤的搜索"></a>(3) 带阈值过滤的搜索</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">retriever = vector_db.as_retriever(</span><br><span class="line">    search_type=<span class="string">&quot;similarity_score_threshold&quot;</span>,</span><br><span class="line">    search_kwargs=&#123;</span><br><span class="line">        <span class="string">&quot;k&quot;</span>: <span class="number">5</span>,</span><br><span class="line">        <span class="string">&quot;score_threshold&quot;</span>: <span class="number">0.8</span>  <span class="comment"># 只返回相似度≥80%的结果</span></span><br><span class="line">    &#125;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-元数据过滤搜索"><a href="#3-元数据过滤搜索" class="headerlink" title="3. 元数据过滤搜索"></a>3. 元数据过滤搜索</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 简单条件</span></span><br><span class="line">retriever = vector_db.as_retriever(</span><br><span class="line">    search_kwargs=&#123;</span><br><span class="line">        <span class="string">&quot;filter&quot;</span>: &#123;<span class="string">&quot;category&quot;</span>: <span class="string">&quot;计算机&quot;</span>, <span class="string">&quot;year&quot;</span>: &#123;<span class="string">&quot;$gte&quot;</span>: <span class="number">2020</span>&#125;&#125;,</span><br><span class="line">        <span class="string">&quot;k&quot;</span>: <span class="number">5</span></span><br><span class="line">    &#125;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 复杂条件</span></span><br><span class="line">advanced_filter = &#123;</span><br><span class="line">    <span class="string">&quot;$or&quot;</span>: [</span><br><span class="line">        &#123;<span class="string">&quot;author&quot;</span>: <span class="string">&quot;Martin Fowler&quot;</span>&#125;,</span><br><span class="line">        &#123;<span class="string">&quot;tags&quot;</span>: &#123;<span class="string">&quot;$contains&quot;</span>: <span class="string">&quot;design patterns&quot;</span>&#125;&#125;,</span><br><span class="line">        &#123;<span class="string">&quot;page_count&quot;</span>: &#123;<span class="string">&quot;$lt&quot;</span>: <span class="number">100</span>&#125;&#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-混合检索策略"><a href="#4-混合检索策略" class="headerlink" title="4. 混合检索策略"></a>4. 混合检索策略</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.retrievers <span class="keyword">import</span> EnsembleRetriever, BM25Retriever</span><br><span class="line"></span><br><span class="line"><span class="comment"># 向量检索</span></span><br><span class="line">vector_retriever = vector_db.as_retriever(search_kwargs=&#123;<span class="string">&quot;k&quot;</span>: <span class="number">4</span>&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 关键词检索</span></span><br><span class="line">bm25_retriever = BM25Retriever.from_documents(documents)</span><br><span class="line">bm25_retriever.k = <span class="number">2</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 组合检索器</span></span><br><span class="line">ensemble_retriever = EnsembleRetriever(</span><br><span class="line">    retrievers=[vector_retriever, bm25_retriever],</span><br><span class="line">    weights=[<span class="number">0.7</span>, <span class="number">0.3</span>]  <span class="comment"># 向量检索占70%权重</span></span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+
+<h2 id="六、完整RAG链示例"><a href="#六、完整RAG链示例" class="headerlink" title="六、完整RAG链示例"></a>六、完整RAG链示例</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain_core.prompts <span class="keyword">import</span> ChatPromptTemplate</span><br><span class="line"><span class="keyword">from</span> langchain_core.runnables <span class="keyword">import</span> RunnablePassthrough</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1. 定义提示模板</span></span><br><span class="line">template = <span class="string">&quot;&quot;&quot;基于以下上下文回答：</span></span><br><span class="line"><span class="string">&#123;context&#125;</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">问题：&#123;question&#125;&quot;&quot;&quot;</span></span><br><span class="line">prompt = ChatPromptTemplate.from_template(template)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 准备检索器</span></span><br><span class="line">retriever = vector_db.as_retriever(</span><br><span class="line">    search_type=<span class="string">&quot;mmr&quot;</span>,</span><br><span class="line">    search_kwargs=&#123;</span><br><span class="line">        <span class="string">&quot;k&quot;</span>: <span class="number">5</span>,</span><br><span class="line">        <span class="string">&quot;filter&quot;</span>: &#123;<span class="string">&quot;category&quot;</span>: <span class="string">&quot;计算机&quot;</span>&#125;,</span><br><span class="line">        <span class="string">&quot;lambda_mult&quot;</span>: <span class="number">0.3</span></span><br><span class="line">    &#125;</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 构建处理链</span></span><br><span class="line">chain = (</span><br><span class="line">    &#123;<span class="string">&quot;context&quot;</span>: retriever, <span class="string">&quot;question&quot;</span>: RunnablePassthrough()&#125;</span><br><span class="line">    | prompt</span><br><span class="line">    | ChatOpenAI(model=<span class="string">&quot;gpt-4&quot;</span>)</span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 执行查询</span></span><br><span class="line">result = chain.invoke(<span class="string">&quot;请解释工厂方法模式&quot;</span>)</span><br><span class="line"><span class="built_in">print</span>(result.content)</span><br></pre></td></tr></table></figure>
+
+<h2 id="七、性能优化建议"><a href="#七、性能优化建议" class="headerlink" title="七、性能优化建议"></a>七、性能优化建议</h2><ol>
+<li><p><strong>索引优化</strong>：</p>
+<ul>
+<li>对常用过滤字段（如category、year）建立索引</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vector_db.create_index(fields=[<span class="string">&quot;category&quot;</span>, <span class="string">&quot;year&quot;</span>])</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>异步检索</strong>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">results = <span class="keyword">await</span> retriever.ainvoke(<span class="string">&quot;异步查询问题&quot;</span>)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>缓存机制</strong>：</p>
+<p>python</p>
+<p>复制</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.cache <span class="keyword">import</span> InMemoryCache</span><br><span class="line"><span class="keyword">from</span> langchain.<span class="built_in">globals</span> <span class="keyword">import</span> set_llm_cache</span><br><span class="line"></span><br><span class="line">set_llm_cache(InMemoryCache())</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>批量处理</strong>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 批量检索多个问题</span></span><br><span class="line">batch_questions = [<span class="string">&quot;问题1&quot;</span>, <span class="string">&quot;问题2&quot;</span>, <span class="string">&quot;问题3&quot;</span>]</span><br><span class="line">batch_results = retriever.batch(batch_questions)</span><br></pre></td></tr></table></figure></li>
+</ol>
+<h2 id="八、常见问题解决"><a href="#八、常见问题解决" class="headerlink" title="八、常见问题解决"></a>八、常见问题解决</h2><ol>
+<li><p><strong>元数据过滤无效</strong>：</p>
+<ul>
+<li>检查字段名称是否完全匹配（区分大小写）</li>
+<li>确认所有文档都包含该元数据字段</li>
+</ul>
+</li>
+<li><p><strong>MMR效果不佳</strong>：</p>
+<ul>
+<li>调整<code>lambda_mult</code>参数（通常0.2-0.5效果较好）</li>
+<li>增加检索数量<code>k</code>后再进行多样性筛选</li>
+</ul>
+</li>
+<li><p><strong>阈值过滤返回空结果</strong>：</p>
+<ul>
+<li>逐步降低阈值（从0.9→0.8→0.7）</li>
+<li>检查嵌入模型是否适合当前领域</li>
+</ul>
+</li>
+<li><p><strong>处理大型文档集</strong>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 分批次处理</span></span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="number">0</span>, <span class="built_in">len</span>(docs), <span class="number">100</span>):</span><br><span class="line">    batch = docs[i:i+<span class="number">100</span>]</span><br><span class="line">    vector_db.add_documents(batch)</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+    </article>
+    
+    <div class="read-nums">
+      <!-- id 将作为查询条件 -->
+      <span id="2025/06/09/LangChain之Rag/" class="leancloud_visitors" data-flag-title="Your Article Title">
+        <em class="post-meta-item-text">浏览量</em>
+        <i class="leancloud-visitors-count"></i>
+      </span>
+    </div>
+    <div class="comments-intro">
+      <h2>评论区</h2>
+      <p>欢迎你留下宝贵的意见，昵称输入QQ号会显示QQ头像哦~</p>
+    </div>
+    <div id="vcomments" class="vcomments"></div>
+    
+  </div>
+  <div class="article-catelogue">
+    <div class="article-catelogue--wrapper">
+      <div class="catelogue catelogue-1">
+        <h3>目录</h3>
+        <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#LangChain-RAG-%E5%AE%8C%E6%95%B4%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97"><span class="toc-number">1.</span> <span class="toc-text">LangChain RAG 完整使用指南</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81RAG-%E6%A0%B8%E5%BF%83%E6%B5%81%E7%A8%8B%E6%A6%82%E8%BF%B0"><span class="toc-number">1.1.</span> <span class="toc-text">一、RAG 核心流程概述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E6%96%87%E6%A1%A3%E5%8A%A0%E8%BD%BD-Document-Loading"><span class="toc-number">1.2.</span> <span class="toc-text">二、文档加载 (Document Loading)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E6%94%AF%E6%8C%81%E7%9A%84%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F"><span class="toc-number">1.2.1.</span> <span class="toc-text">1. 支持的文件格式</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%8A%A0%E8%BD%BD%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.2.2.</span> <span class="toc-text">2. 加载示例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%85%83%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86"><span class="toc-number">1.2.3.</span> <span class="toc-text">3. 元数据处理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E6%96%87%E6%9C%AC%E5%88%86%E5%89%B2-Text-Splitting"><span class="toc-number">1.3.</span> <span class="toc-text">三、文本分割 (Text Splitting)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E9%80%92%E5%BD%92%E5%AD%97%E7%AC%A6%E5%88%86%E5%89%B2%E5%99%A8"><span class="toc-number">1.3.1.</span> <span class="toc-text">1. 递归字符分割器</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%88%86%E5%89%B2%E7%AD%96%E7%95%A5%E5%BB%BA%E8%AE%AE"><span class="toc-number">1.3.2.</span> <span class="toc-text">2. 分割策略建议</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%90%91%E9%87%8F%E5%8C%96-Embedding"><span class="toc-number">1.4.</span> <span class="toc-text">四、向量化 (Embedding)</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%BD%BF%E7%94%A8OpenAI%E5%B5%8C%E5%85%A5"><span class="toc-number">1.4.1.</span> <span class="toc-text">1. 使用OpenAI嵌入</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E5%AD%98%E5%82%A8"><span class="toc-number">1.4.2.</span> <span class="toc-text">2. 向量数据库存储</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%A3%80%E7%B4%A2%E5%99%A8-Retriever-%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.5.</span> <span class="toc-text">五、检索器 (Retriever) 详解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E4%B8%89%E7%A7%8D%E6%A3%80%E7%B4%A2%E6%96%B9%E6%B3%95%E5%AF%B9%E6%AF%94"><span class="toc-number">1.5.1.</span> <span class="toc-text">1. 三种检索方法对比</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E6%A3%80%E7%B4%A2%E5%99%A8%E9%85%8D%E7%BD%AE%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.5.2.</span> <span class="toc-text">2. 检索器配置示例</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-%E5%9F%BA%E7%A1%80%E7%9B%B8%E4%BC%BC%E5%BA%A6%E6%90%9C%E7%B4%A2"><span class="toc-number">1.5.2.1.</span> <span class="toc-text">(1) 基础相似度搜索</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#2-MMR-%E5%A4%9A%E6%A0%B7%E6%80%A7%E6%90%9C%E7%B4%A2"><span class="toc-number">1.5.2.2.</span> <span class="toc-text">(2) MMR 多样性搜索</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#3-%E5%B8%A6%E9%98%88%E5%80%BC%E8%BF%87%E6%BB%A4%E7%9A%84%E6%90%9C%E7%B4%A2"><span class="toc-number">1.5.2.3.</span> <span class="toc-text">(3) 带阈值过滤的搜索</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E5%85%83%E6%95%B0%E6%8D%AE%E8%BF%87%E6%BB%A4%E6%90%9C%E7%B4%A2"><span class="toc-number">1.5.3.</span> <span class="toc-text">3. 元数据过滤搜索</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2%E7%AD%96%E7%95%A5"><span class="toc-number">1.5.4.</span> <span class="toc-text">4. 混合检索策略</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%AE%8C%E6%95%B4RAG%E9%93%BE%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.6.</span> <span class="toc-text">六、完整RAG链示例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E5%BB%BA%E8%AE%AE"><span class="toc-number">1.7.</span> <span class="toc-text">七、性能优化建议</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E8%A7%A3%E5%86%B3"><span class="toc-number">1.8.</span> <span class="toc-text">八、常见问题解决</span></a></li></ol></li></ol>
+      </div>
+      
+        <div class="catelogue catelogue-2">
+           
+          
+            <p>
+              <span>下一篇</span>
+              <a href="/2025/06/04/Langchain核心概念/">Langchain核心概念</a>
+            </p>
+          
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // var定义，避免pjax重新进来造成的重复声明错误
+  var config = JSON.parse('{"enable":true,"appId":"Pf8zCXGEH1qsprnWfikVVujL-gzGzoHsz","appKey":"qOqoiUHhH1TGtLRUYURkLRQX","placeholder":"请留下你宝贵的意见吧~","meta":["nick"],"recordIP":true,"visitor":true,"enableQQ":true}')
+  new Valine({
+    el: '#vcomments',
+    appId: config.appId,
+    appKey: config.appKey,
+    placeholder: config.placeholder,
+    meta: config.meta,
+    recordIP: config.recordIP,
+    visitor: config.visitor,
+    enableQQ: config.enableQQ,
+    path: '2025/06/09/LangChain之Rag/'
+  })
+</script>
+
+
+<script>
+  $(document).on('pjax:complete', function() {
+    const tocs = document.querySelector('.toc')
+    const links = tocs ? tocs.querySelectorAll('a') : []
+    links.forEach(link => {
+      link.addEventListener('click', e => {
+        const href = decodeURIComponent(e.href)
+        href.search(/#(.*)/)
+        const id = RegExp.$1
+        const target = document.querySelector('#' + id)
+        const top = target.offsetTop
+        document.documentElement.scrollTo({
+          top: top - 100,
+          behavior: 'smooth'
+        })
+        e.preventDefault()
+      })
+    })
+  })
+</script> 
+
+</div>
+      <div class="main-right-wrapper"><div class="main-right">
+  <div class="main-right--board">
+    <div class="main-right--title">
+      <h5>公告栏</h5>
+      <i class="iconfont icon-gonggao"></i>
+    </div>
+    <div class="main-right--content">
+      Hello~大噶好。唔系可乐爱宅着，欢迎你们来到我的博客小站，希望能在这里收获到有用的东西哦！ 
+    </div>
+  </div>
+
+  <div id="aplayer" class="main-right--music"></div>
+
+  <div class="operate-items">
+    <div class="operate-item backtop">
+      <i class="iconfont icon-huidaodingbu"></i>
+      <span>回到顶部</span>
+    </div>
+    
+    <div class="operate-item turn-comment hidden">
+      <i class="iconfont icon-pinglun"></i>
+      <span>查看评论</span>
+    </div>
+    
+  </div>
+
+  <div class="main-right--site">
+    <div class="main-right--power">
+      <p>Power By <a target="_blank" rel="noopener" href="https://hexo.io/zh-cn/docs/">Hexo</a>.</p>
+      <p>Theme：<a target="_blank" rel="noopener" href="https://github.com/Aizener/hexo-theme-cola">Cola.</a></p>
+    </div>
+    <p class="main-right--refer"><a target="_blank" rel="noopener" href="https://beian.miit.gov.cn/#/Integrated/index">蜀ICP备2022005384号-1</a> </p>
+  </div>
+</div>
+
+<script>
+  function setOperateItem () {
+    const reg = /\d{4}\/\d{2}\/\d{2}\/.+/
+    const path = location.pathname
+    const operateDom = document.querySelector('.main-right .operate-items')
+    const commentDom = document.querySelector('.turn-comment')
+    const cateloguDom = document.querySelector('.article-catelogue > .article-catelogue--wrapper');
+
+    if (commentDom) {
+      if (reg.test(path) || path.match(/\/log\/.+/)) {
+        commentDom.classList.remove('hidden')
+        const newDom = operateDom.cloneNode(true);
+        const _backtopDom = newDom.querySelector('.backtop');
+        const _commentDom = newDom.querySelector('.turn-comment');
+        _backtopDom.addEventListener('click', () => backTopEvent());
+        _commentDom.addEventListener('click', () => commentDomEvent());
+        cateloguDom.appendChild(newDom);
+      } else {
+        commentDom.classList.add('hidden')
+      }
+    }
+  }
+
+  setOperateItem()
+  const musics = JSON.parse(`[{"name":"安河桥","artist":"宋冬野","url":"http://ting6.yymp3.net:82/new25/songdongye/11.mp3","cover":"https://img2.baidu.com/it/u=1260056724,1076343118&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500"},{"name":"卡布达","artist":"暂无","url":"music/kabuda.mp3","cover":"https://img2.baidu.com/it/u=705831265,2862720033&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500"}]`)
+  const ap = new APlayer({
+    container: document.querySelector('#aplayer'),
+    audio: musics,
+  })
+
+  $(document).on('pjax:complete', function() {
+    setOperateItem()
+  })
+
+  document.querySelector('.backtop').addEventListener('click', () => {
+    backTopEvent();
+  })
+  const dom = document.querySelector('.turn-comment')
+  dom && dom.addEventListener('click', () => {
+    commentDomEvent();
+  })
+
+  function backTopEvent() {
+    document.documentElement.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
+  }
+
+  function commentDomEvent() {
+    const commentDom = document.querySelector('.comments-intro')
+    if (!commentDom) return
+    const top = commentDom.offsetTop, height = commentDom.offsetHeight
+    document.documentElement.scrollTo({
+      top: top - 2 * height,
+      behavior: 'smooth'
+    })
+  }
+</script></div>
+    </section>
+  </div>
+  <div id="progress" class="progress"></div>
+  <div id="gray" class="gray"></div>
+
+  <script>
+    function initScroll () {
+      document.addEventListener('scroll', () => {
+        const doc = document.documentElement
+        const scrollTop = doc.scrollTop
+        const pageHeight = doc.offsetHeight
+        const clientHeight = doc.clientHeight
+        const ratio = scrollTop / (pageHeight - clientHeight)
+        const progress = document.querySelector('#progress')
+        const avatarImg = document.querySelector('.main-left--avatar')
+        progress.style.width = (100 * ratio) + '%'
+        avatarImg.style.transform = `rotate(${360 * ratio}deg)`
+      })
+    }
+
+    const rootPath = "/"
+
+    const checkAndSetArticlePageLayout = () => {
+      const path = location.pathname.replace(rootPath, '');
+      if (
+        /^\/?\d{4}\/\d{2}\/\d{2}\/.*/.test(path) ||
+        /^log\/.+/.test(path)
+      ) {
+        $('.main-container, .main-right, .main-right-wrapper').addClass('is-article')
+      } else {
+        $('.main-container, .main-right, .main-right-wrapper').removeClass('is-article')
+      }
+    }
+
+    const gray = "none"
+    const setGrayStyle = () => {
+      if (gray === 'none') {
+        return
+      } else if (gray === 'index') {
+        location.pathname === '/' ? $('#gray').show() : $('#gray').hide()
+      } else if (gray === 'all') {
+        $('#gray').show()
+      }
+    }
+    setGrayStyle()
+
+
+    window.onload = function () {
+      checkAndSetArticlePageLayout()
+      setTimeout(() => {
+        $('#load').slideUp()
+        $('#container').slideToggle()
+        setTimeout(() => {
+          initScroll();
+        }, 500)
+      }, 500)
+    }
+    
+    let status = 0
+    // 对所有链接跳转事件绑定pjax容器container
+    $(document).pjax('a[target!=_blank]', '#main-container', {
+      container: '#main-container',
+      fragment: '#main-container',
+      timeout: 8000
+    })
+
+    $(document).on('pjax:start', function() {
+    })
+    $(document).on('pjax:complete', function() {
+      status = 0
+      $('.main-container').addClass('to-up').on('animationend', function() {
+        $(this).removeClass('to-up')
+      })
+      setGrayStyle()
+      checkAndSetArticlePageLayout()
+    })
+    $(document).on('pjax:popstate', function() {
+      status = -1
+      checkAndSetArticlePageLayout()
+    });
+  </script>
+</body>
+</html>
